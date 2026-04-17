@@ -38,10 +38,7 @@ export async function consultarGuiaEnvia(guia) {
   let browser = null;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await launchBrowser();
 
     const page = await browser.newPage();
     await page.setUserAgent(
@@ -131,8 +128,21 @@ export async function consultarGuiaEnvia(guia) {
           estadoNormalizado === "Recibido" ? trackingData.fecha : null,
       };
     } else {
+      const pageInfo = await page
+        .evaluate(() => {
+          return {
+            title: document.title,
+            bodyText: document.body.innerText.substring(0, 500),
+            hasError:
+              document.body.innerText.includes("not found") ||
+              document.body.innerText.includes("error"),
+          };
+        })
+        .catch(() => ({}));
+
       console.warn(
-        `No tracking details found for Envia guide ${guia} (Page might not have loaded correctly)`,
+        `[Envia] No tracking details found for guide ${guia}. Page state:`,
+        pageInfo,
       );
       return null;
     }

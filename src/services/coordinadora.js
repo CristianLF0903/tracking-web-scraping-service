@@ -80,6 +80,9 @@ export async function consultarGuiaCoordinadora(guia) {
           return {
             title: document.title,
             bodyText: document.body.innerText.substring(0, 500),
+            hasError:
+              document.body.innerText.includes("not found") ||
+              document.body.innerText.includes("error"),
           };
         })
         .catch(() => ({}));
