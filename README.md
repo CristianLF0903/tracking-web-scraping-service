@@ -12,6 +12,7 @@ API REST construida con **Express.js** para consultar el estado de guías de env
 | Aldía Logística | Web Scraping (axios + regex) | `aldia` |
 | Solex App | Web Scraping (axios + regex) | `solexapp` |
 | Coordinadora | Web Scraping (puppeteer) | `coordinadora` |
+| Envia.co | Web Scraping (puppeteer) | `envia` |
 
 ---
 
