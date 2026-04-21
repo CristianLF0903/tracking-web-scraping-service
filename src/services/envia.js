@@ -4,7 +4,7 @@ import { ENVIA_URL_BASE } from "../config/constants.js";
 function normalizarEstadoEnvia(estado) {
   const e = estado.toLowerCase();
 
-  if (e.includes("entregamos tu envío") || e.includes("entregado")) {
+  if (e.includes("entregamos") || e.includes("entregado")) {
     return "Recibido";
   }
 
