@@ -5,3 +5,4 @@ export const LANGUAGE = "es";
 export const ALDIA_URL_BASE = "https://aldialogistica.com/rastreo/rastreo.php?remesa=";
 export const COORDINADORA_URL_BASE = "https://coordinadora.com/rastreo/rastreo-de-guia/detalle-de-rastreo-de-guia/?guia=";
 export const ENVIA_URL_BASE = "https://hub.envia.co/landingrastreo/Rastreo/Index?guia=";
+export const RAPIDOOCHOA_URL_BASE = "https://rapidoochoa.tmsolutions.com.co/tmland/faces/public/tmland-carga/cotizador_envios.xhtml?parametroInicial=cmFwaWRvb2Nob2E=";
