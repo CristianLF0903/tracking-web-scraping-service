@@ -5,7 +5,8 @@ function normalizarEstadoRapidoOchoa(estado) {
   const e = estado.toUpperCase().trim();
 
   if (e === "GUIA ELABORADA") return "Enviado";
-  if (e === "ENTREGADA" || e.includes("FACTURAR")) return "Recibido";
+  if (e === "ENTREGADA" || e.includes("FACTURAR") || e.includes("FACTURADA"))
+    return "Recibido";
 
   return "En camino";
 }
@@ -32,10 +33,9 @@ export async function consultarGuiaRapidoOchoa(guia) {
     await page.click('li[data-index="1"]');
 
     // Esperar a que el formulario de rastreo sea visible
-    await page.waitForSelector(
-      'input[id="tabpane:form_entrega:codigoguia"]',
-      { timeout: 10000 },
-    );
+    await page.waitForSelector('input[id="tabpane:form_entrega:codigoguia"]', {
+      timeout: 10000,
+    });
 
     // 3. Limpiar el campo, ingresar la guía y presionar Enter
     const inputSelector = 'input[id="tabpane:form_entrega:codigoguia"]';
@@ -46,10 +46,9 @@ export async function consultarGuiaRapidoOchoa(guia) {
     // 4. Esperar a que la tabla de resultados se cargue
     // Esperamos a que aparezcan filas en la tabla de rastreo
     await page
-      .waitForSelector(
-        "#tabpane\\:form_entrega\\:j_idt107_data tr",
-        { timeout: 20000 },
-      )
+      .waitForSelector("#tabpane\\:form_entrega\\:j_idt107_data tr", {
+        timeout: 20000,
+      })
       .catch(() => {
         console.warn(
           `[RapidoOchoa] Timeout esperando resultados para guía ${guia}`,
@@ -98,16 +97,11 @@ export async function consultarGuiaRapidoOchoa(guia) {
           estadoNormalizado === "Recibido" ? trackingData.fecha : null,
       };
     } else {
-      console.warn(
-        `[RapidoOchoa] No tracking details found for guide ${guia}`,
-      );
+      console.warn(`[RapidoOchoa] No tracking details found for guide ${guia}`);
       return null;
     }
   } catch (error) {
-    console.error(
-      `Error consulting RapidoOchoa guide ${guia}:`,
-      error.message,
-    );
+    console.error(`Error consulting RapidoOchoa guide ${guia}:`, error.message);
     return null;
   } finally {
     if (browser) {
