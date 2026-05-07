@@ -8,7 +8,25 @@ import chromium from '@sparticuz/chromium';
  * En desarrollo utiliza el puppeteer estándar.
  */
 export async function launchBrowser() {
-    // Detección de entorno de producción (Vercel, AWS Lambda, o variable de entorno)
+    // 1. Prioridad: Browserless.io (si está configurado en .env)
+    const browserlessEndpoint = process.env.BROWSERLESS_WS_ENDPOINT;
+    const browserlessToken = process.env.BROWSERLESS_TOKEN;
+
+    if (browserlessEndpoint && browserlessToken) {
+        console.log(`[Browser] Conectando a Browserless.io...`);
+        try {
+            const wsUrl = `${browserlessEndpoint}?token=${browserlessToken}`;
+            return await puppeteer.connect({
+                browserWSEndpoint: wsUrl,
+                defaultViewport: { width: 1920, height: 1080 }
+            });
+        } catch (error) {
+            console.error('[Browser] Error al conectar con Browserless.io:', error.message);
+            // Si falla, continuamos con los otros métodos
+        }
+    }
+
+    // 2. Detección de entorno de producción (Vercel, AWS Lambda, o variable de entorno)
     const isProduction = 
         process.env.NODE_ENV === 'production' || 
         process.env.VERCEL === '1' || 
@@ -28,18 +46,17 @@ export async function launchBrowser() {
             });
         } catch (error) {
             console.error('[Browser] Error al lanzar puppeteer-core en producción:', error.message);
-            // Fallback al puppeteer normal por si acaso
         }
     }
 
-    // Configuración para desarrollo local
+    // 3. Configuración para desarrollo local
     return await puppeteer.launch({
-        headless: "new", // "new" es el modo recomendado en versiones recientes
+        headless: "new",
         args: [
             "--no-sandbox", 
             "--disable-setuid-sandbox", 
             "--disable-dev-shm-usage",
-            "--disable-blink-features=AutomationControlled", // Ayuda a evadir detección de bots
+            "--disable-blink-features=AutomationControlled",
             "--window-size=1920,1080"
         ],
         defaultViewport: {
