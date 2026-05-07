@@ -6,6 +6,7 @@ import { consultarGuiaCoordinadora } from '../services/coordinadora.js';
 import { consultarGuiaEnvia } from '../services/envia.js';
 import { consultarGuiaRapidoOchoa } from '../services/rapidoochoa.js';
 import { consultarGuiaTCC } from '../services/tcc.js';
+import { consultarGuiaVeloenvios } from '../services/veloenvios.js';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ async function consultarPorTransportadora(guia, transportadora) {
         case 'envia':        return consultarGuiaEnvia(guia);
         case 'rapidoochoa':  return consultarGuiaRapidoOchoa(guia);
         case 'tcc':          return consultarGuiaTCC(guia);
+        case 'veloenvios':   return consultarGuiaVeloenvios(guia);
         default:             return null;
     }
 }
@@ -28,7 +30,7 @@ async function consultarPorTransportadora(guia, transportadora) {
 router.get('/:guia/:transportadora', async (req, res) => {
     const { guia, transportadora } = req.params;
 
-    const transportadorasValidas = ['servientrega', 'aldia', 'solexapp', 'coordinadora', 'envia', 'rapidoochoa', 'tcc'];
+    const transportadorasValidas = ['servientrega', 'aldia', 'solexapp', 'coordinadora', 'envia', 'rapidoochoa', 'tcc', 'veloenvios'];
     if (!transportadorasValidas.includes(transportadora)) {
         return res.status(400).json({
             success: false,
