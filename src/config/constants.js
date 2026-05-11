@@ -8,4 +8,5 @@ export const ENVIA_URL_BASE = "https://hub.envia.co/landingrastreo/Rastreo/Index
 export const RAPIDOOCHOA_URL_BASE = "https://rapidoochoa.tmsolutions.com.co/tmland/faces/public/tmland-carga/cotizador_envios.xhtml?parametroInicial=cmFwaWRvb2Nob2E=";
 export const TCC_URL_BASE = "https://tcc.com.co/courier/mensajeria/rastrear-envio/";
 export const VELOENVIOS_URL_BASE = "https://servicioserp.com/utilidad/localizador/16";
-export const TRANSPRENSA_URL_BASE = "https://transprensa.com/Seguimiento/?remesa_codigo=";
+export const TRANSPRENSA_URL_BASE = "https://transprensa.com/RastreoRemesa/Rastreo.php?remesa_codigo=";
+export const BROWSERLESS_BQL_ENDPOINT = "https://production-sfo.browserless.io/chromium/bql";
