@@ -1,125 +1,116 @@
-import puppeteerCore from "puppeteer-core";
+import puppeteer from 'puppeteer';
 import { TCC_URL_BASE } from "../config/constants.js";
 
+/**
+ * Normaliza los estados de TCC desde 17track.net
+ */
 function normalizarEstadoTCC(estado) {
-  const e = estado.toLowerCase();
+  const e = estado.toLowerCase().trim();
 
-  if (e.includes("entregado") || e.includes("exito") || e.includes("cumplido")) {
+  if (e.includes("entregado")) {
     return "Recibido";
   }
 
-  if (
-    e.includes("recogid") || // Captura "recogido" y "recogida"
-    e.includes("recolectado") ||
-    e.includes("despachado") ||
-    e.includes("salida") ||
-    e.includes("programado")
-  ) {
+  if (e.includes("recogid") || e.includes("programado")) {
     return "Enviado";
   }
 
   return "En camino";
 }
 
+/**
+ * Consulta el tracking de TCC a través de 17track.net
+ * @param {string} guia - Número de guía de TCC
+ */
 export async function consultarGuiaTCC(guia) {
-  const wsEndpoint = process.env.BROWSERLESS_WS_ENDPOINT;
-  const token = process.env.BROWSERLESS_TOKEN;
-
-  if (!wsEndpoint || !token || token === "your-token-here") {
-    console.error(
-      "[TCC] Faltan variables de entorno para browserless (WS_ENDPOINT o TOKEN)"
-    );
-    return null;
-  }
-
   let browser = null;
-  try {
-    // Conectar a browserless con resolución de CAPTCHA
-    browser = await puppeteerCore.connect({
-      browserWSEndpoint: `${wsEndpoint}?token=${token}&solveCaptchas=true`,
-    });
 
+  try {
+    // ACTIVAR NAVEGADOR VISIBLE PARA DEPURACIÓN
+    browser = await puppeteer.launch({
+      headless: false,
+      args: ["--no-sandbox", "--window-size=1920,1080"]
+    });
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
+    await page.setViewport({ width: 1920, height: 1080 });
+
+    // Configurar un user agent moderno para evitar bloqueos básicos
     await page.setUserAgent(
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     );
 
-    // Navegar a TCC
+    // Navegar a la página de TCC en 17track
     await page.goto(TCC_URL_BASE, {
       waitUntil: "networkidle2",
       timeout: 60000,
     });
 
-    // Esperar y llenar el campo de guía
-    await page.waitForSelector('textarea[name="document"]', { timeout: 20000 });
-    await page.type('textarea[name="document"]', guia);
+    // 1. Ingresar la guía en el textarea
+    const textareaSelector = "#auto-size-textarea";
+    await page.waitForSelector(textareaSelector, { timeout: 15000 });
+    await page.type(textareaSelector, guia, { delay: 50 });
 
-    // Clic en buscar
-    await page.click('button[aria-label="search-guide"]');
+    // 2. Hacer clic en el botón de rastrear
+    // Usamos el selector de clase que identifica al botón "Rastrear"
+    const btnSelector = ".batch_track_search-area-bottom__MV_vI";
+    await page.waitForSelector(btnSelector, { timeout: 10000 });
+    await page.click(btnSelector);
 
-    // Esperar a que la resolución del CAPTCHA y la carga de resultados ocurran
-    // Buscamos un selector que indique que los resultados están cargando o ya están ahí
-    // TCC suele mostrar un resumen o una lista de eventos
-    // Esperar a que el modal de resultados aparezca
-    await page
-      .waitForSelector(".ModalGuide-module__Container___akw03", {
-        timeout: 45000,
-      })
-      .catch(() =>
-        console.warn(`[TCC] Timeout esperando el modal de resultados para guía ${guia}`)
-      );
+    // 3. Esperar a que los resultados se carguen y aparezcan
+    // El selector proporcionado por el usuario para el bloque de estado
+    const resultBlockSelector = ".flex-1.min-w-0.px-2.cursor-pointer.text-sm.text-zinc-900";
+    
+    // 17track puede tardar un poco en procesar, aumentamos el timeout
+    await page.waitForSelector(resultBlockSelector, { timeout: 45000 });
 
-    const trackingData = await page.evaluate(() => {
+    // Espera adicional de seguridad para asegurar que el contenido se renderice completamente
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // 4. Extraer el estado y la fecha del primer elemento (más reciente)
+    const trackingData = await page.evaluate((selector) => {
       const clean = (txt) => (txt ? txt.trim().replace(/\s+/g, " ") : null);
-
-      // Buscamos los elementos de la historia en el modal
-      const items = document.querySelectorAll(".ModalGuide-module__ItemDetails___F5QMu");
       
-      if (items.length > 0) {
-        const firstItem = items[0]; // El primero es el más reciente
+      const resultBlock = document.querySelector(selector);
+      if (!resultBlock) return null;
 
-        // Extraer texto del estado (está en un div hijo directo que no es el icono ni la fecha)
-        const statusDiv = Array.from(firstItem.children).find(
-          (el) =>
-            el.tagName === "DIV" &&
-            !el.className.includes("Icon") &&
-            !el.className.includes("groupIconArrow")
-        );
+      // Según el HTML: <div>fecha</div> y luego <div><span>estado</span></div>
+      const dateElement = resultBlock.querySelector("div:first-child");
+      const statusElement = resultBlock.querySelector("span.flex-1");
 
-        // Extraer fecha (está dentro del div con clase groupIconArrow en un p)
-        const dateP = firstItem.querySelector(
-          ".ModalGuide-module__groupIconArrow___Gc7c4 p"
-        );
-
-        return {
-          estado: clean(statusDiv?.textContent),
-          fecha: clean(dateP?.textContent),
-        };
-      }
-
-      return null;
-    });
+      return {
+        fecha: dateElement ? clean(dateElement.textContent) : null,
+        estado: statusElement ? clean(statusElement.textContent) : null,
+      };
+    }, resultBlockSelector);
 
     if (trackingData && trackingData.estado) {
+      console.log("[TCC Debug] Datos extraídos:", trackingData);
       const estadoNormalizado = normalizarEstadoTCC(trackingData.estado);
+      
+      // Esperar un poco para que el usuario vea el resultado en el navegador
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
       return {
         estadoActual: estadoNormalizado,
         estadoOriginal: trackingData.estado,
         fechaActualizacion: trackingData.fecha,
         fechaEnvio: null,
-        fechaEntrega:
-          estadoNormalizado === "Recibido" ? trackingData.fecha : null,
+        fechaEntrega: estadoNormalizado === "Recibido" ? trackingData.fecha : null,
       };
+    } else {
+      console.warn(`[TCC] No se encontró información de tracking para la guía ${guia}`);
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      return null;
     }
 
-    return null;
   } catch (error) {
-    console.error(`Error consultando TCC guía ${guia}:`, error.message);
+    console.error(`[TCC] Error consultando guía ${guia} en 17track:`, error.message);
+    await new Promise(resolve => setTimeout(resolve, 10000));
     return null;
   } finally {
     if (browser) {
-      await browser.disconnect();
+      // Comentado para depuración manual si es necesario
+      await browser.close();
     }
   }
 }

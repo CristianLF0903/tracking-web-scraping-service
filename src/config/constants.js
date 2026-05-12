@@ -6,7 +6,8 @@ export const ALDIA_URL_BASE = "https://aldialogistica.com/rastreo/rastreo.php?re
 export const COORDINADORA_URL_BASE = "https://coordinadora.com/rastreo/rastreo-de-guia/detalle-de-rastreo-de-guia/?guia=";
 export const ENVIA_URL_BASE = "https://hub.envia.co/landingrastreo/Rastreo/Index?guia=";
 export const RAPIDOOCHOA_URL_BASE = "https://rapidoochoa.tmsolutions.com.co/tmland/faces/public/tmland-carga/cotizador_envios.xhtml?parametroInicial=cmFwaWRvb2Nob2E=";
-export const TCC_URL_BASE = "https://tcc.com.co/courier/mensajeria/rastrear-envio/";
+export const TCC_URL_BASE = "https://www.17track.net/es/carriers/tcc";
 export const VELOENVIOS_URL_BASE = "https://servicioserp.com/utilidad/localizador/16";
 export const TRANSPRENSA_URL_BASE = "https://transprensa.com/RastreoRemesa/Rastreo.php?remesa_codigo=";
 export const BROWSERLESS_BQL_ENDPOINT = "https://production-sfo.browserless.io/chromium/bql";
+export const HACEB_URL_BASE = "https://hacebcasamatriz.dispatchtrack.com/widget/xxpiFdBvxghm_NZ71oqt2Q";

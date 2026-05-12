@@ -6,8 +6,9 @@ import chromium from '@sparticuz/chromium';
  * Lanza una instancia de navegador Puppeteer configurada según el entorno.
  * En producción (Vercel/Lambda) utiliza @sparticuz/chromium.
  * En desarrollo utiliza el puppeteer estándar.
+ * @param {Object} options - Opciones adicionales para el lanzamiento (ej: { headless: false })
  */
-export async function launchBrowser() {
+export async function launchBrowser(options = {}) {
     // 1. Prioridad: Browserless.io (si está configurado en .env)
     const browserlessEndpoint = process.env.BROWSERLESS_WS_ENDPOINT;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
@@ -43,6 +44,7 @@ export async function launchBrowser() {
                 executablePath: await chromium.executablePath(),
                 headless: chromium.headless,
                 ignoreHTTPSErrors: true,
+                ...options
             });
         } catch (error) {
             console.error('[Browser] Error al lanzar puppeteer-core en producción:', error.message);
@@ -62,6 +64,7 @@ export async function launchBrowser() {
         defaultViewport: {
             width: 1920,
             height: 1080
-        }
+        },
+        ...options
     });
 }
