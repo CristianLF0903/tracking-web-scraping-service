@@ -4,7 +4,7 @@ import { COORDINADORA_URL_BASE } from "../config/constants.js";
 function normalizarEstadoCoordinadora(estado) {
   const e = estado.toLowerCase();
   if (e.includes("en terminal origen")) return "Enviado";
-  if (e.includes("entregado")) return "Recibido";
+  if (e.includes("entregado")) return "Entregado";
 
   const enCaminoCasos = ["en transporte", "en terminal destino", "en reparto"];
   if (enCaminoCasos.some((caso) => e.includes(caso))) {
@@ -72,7 +72,7 @@ export async function consultarGuiaCoordinadora(guia) {
         fechaActualizacion: trackingData.date,
         fechaEnvio: null,
         fechaEntrega:
-          estadoNormalizado === "Recibido" ? trackingData.date : null,
+          estadoNormalizado === "Entregado" ? trackingData.date : null,
       };
     } else {
       const pageInfo = await page

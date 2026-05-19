@@ -4,7 +4,7 @@ import { ALDIA_URL_BASE } from '../config/constants.js';
 function normalizarEstadoAldia(estado) {
     const e = estado.toLowerCase();
     if (e.includes('generada') || e.includes('registrada')) return 'Enviado';
-    if (e.includes('entregado') || e.includes('cumplido')) return 'Recibido';
+    if (e.includes('entregado') || e.includes('cumplido')) return 'Entregado';
     return 'En camino';
 }
 
@@ -50,7 +50,7 @@ export async function consultarGuiaAldia(guia) {
             estadoOriginal: textoH1,
             fechaActualizacion: null, // Aldía no parece dar fecha de actualización específica en este bloque
             fechaEnvio: null,
-            fechaEntrega: estadoNormalizado === 'Recibido' ? 'Consultar detalles' : null
+            fechaEntrega: estadoNormalizado === 'Entregado' ? 'Consultar detalles' : null
         };
 
     } catch (error) {

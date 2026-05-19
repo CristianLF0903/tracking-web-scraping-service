@@ -6,7 +6,7 @@ const ESTADOS_MAP = {
     'GUIA EN VIAJE TRONCAL': 'En camino',
     'EN BODEGA DESTINO': 'En camino',
     'GUIA EN REPARTO': 'En camino',
-    'ENTREGA EXXE': 'Recibido'
+    'ENTREGA EXXE': 'Entregado'
 };
 
 function normalizarEstado(estado) {

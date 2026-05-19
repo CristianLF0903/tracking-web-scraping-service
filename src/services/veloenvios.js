@@ -9,7 +9,7 @@ function normalizarEstadoVeloenvios(estadoTexto) {
 
   // ── ENTREGA ──
   if (e.includes("entregada") || e.includes("entregado")) {
-    return "Recibido";
+    return "Entregado";
   }
 
   // ── INGRESO ──
@@ -141,7 +141,7 @@ export async function consultarGuiaVeloenvios(guia) {
         estadoOriginal: result.estadoOriginal,
         fechaActualizacion: result.fechaActualizacion,
         fechaEnvio: result.fechaEnvio || null,
-        fechaEntrega: estadoNormalizado === "Recibido" ? result.fechaActualizacion : null,
+        fechaEntrega: estadoNormalizado === "Entregado" ? result.fechaActualizacion : null,
       };
     }
 

@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { launchBrowser } from "../utils/browser.js";
 import { TCC_URL_BASE } from "../config/constants.js";
 
 /**
@@ -8,7 +8,7 @@ function normalizarEstadoTCC(estado) {
   const e = estado.toLowerCase().trim();
 
   if (e.includes("entregado")) {
-    return "Recibido";
+    return "Entregado";
   }
 
   if (e.includes("recogid") || e.includes("programado")) {
@@ -26,37 +26,31 @@ export async function consultarGuiaTCC(guia) {
   let browser = null;
 
   try {
-    // ACTIVAR NAVEGADOR VISIBLE PARA DEPURACIÓN
-    browser = await puppeteer.launch({
-      headless: false,
-      args: ["--no-sandbox", "--window-size=1920,1080"]
-    });
+    // Usar la utilidad estándar con Stealth
+    browser = await launchBrowser({ headless: true });
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
 
-    // Configurar un user agent moderno para evitar bloqueos básicos
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    );
-
-    // Navegar a la página de TCC en 17track
-    await page.goto(TCC_URL_BASE, {
+    // Navegar directamente a la página de rastreo de la guía
+    const directUrl = `https://t.17track.net/es#nums=${guia}&fc=101181`;
+    console.log(`[TCC] Navegando a: ${directUrl}`);
+    
+    await page.goto(directUrl, {
       waitUntil: "networkidle2",
       timeout: 60000,
     });
 
-    // 1. Ingresar la guía en el textarea
-    const textareaSelector = "#auto-size-textarea";
-    await page.waitForSelector(textareaSelector, { timeout: 15000 });
-    await page.type(textareaSelector, guia, { delay: 50 });
+    // 1. Cerrar el tooltip inicial si aparece
+    try {
+      const tooltipCloseSelector = "button.tooltip__close";
+      await page.waitForSelector(tooltipCloseSelector, { timeout: 10000 });
+      await page.click(tooltipCloseSelector);
+      console.log("[TCC] Tooltip cerrado");
+    } catch (e) {
+      console.log("[TCC] No se encontró tooltip o ya estaba cerrado");
+    }
 
-    // 2. Hacer clic en el botón de rastrear
-    // Usamos el selector de clase que identifica al botón "Rastrear"
-    const btnSelector = ".batch_track_search-area-bottom__MV_vI";
-    await page.waitForSelector(btnSelector, { timeout: 10000 });
-    await page.click(btnSelector);
-
-    // 3. Esperar a que los resultados se carguen y aparezcan
+    // 2. Esperar a que los resultados se carguen y aparezcan
     // El selector proporcionado por el usuario para el bloque de estado
     const resultBlockSelector = ".flex-1.min-w-0.px-2.cursor-pointer.text-sm.text-zinc-900";
     
@@ -95,7 +89,7 @@ export async function consultarGuiaTCC(guia) {
         estadoOriginal: trackingData.estado,
         fechaActualizacion: trackingData.fecha,
         fechaEnvio: null,
-        fechaEntrega: estadoNormalizado === "Recibido" ? trackingData.fecha : null,
+        fechaEntrega: estadoNormalizado === "Entregado" ? trackingData.fecha : null,
       };
     } else {
       console.warn(`[TCC] No se encontró información de tracking para la guía ${guia}`);

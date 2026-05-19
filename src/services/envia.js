@@ -5,7 +5,7 @@ function normalizarEstadoEnvia(estado) {
   const e = estado.toLowerCase();
 
   if (e.includes("entregamos") || e.includes("entregado")) {
-    return "Recibido";
+    return "Entregado";
   }
 
   if (
@@ -125,7 +125,7 @@ export async function consultarGuiaEnvia(guia) {
         fechaActualizacion: trackingData.fecha,
         fechaEnvio: null,
         fechaEntrega:
-          estadoNormalizado === "Recibido" ? trackingData.fecha : null,
+          estadoNormalizado === "Entregado" ? trackingData.fecha : null,
       };
     } else {
       const pageInfo = await page

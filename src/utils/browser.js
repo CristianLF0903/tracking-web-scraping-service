@@ -1,15 +1,28 @@
 import puppeteer from 'puppeteer';
 import puppeteerCore from 'puppeteer-core';
+import puppeteerExtra from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import chromium from '@sparticuz/chromium';
+import playwright from 'playwright';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+let Camoufox;
+try {
+    // Camoufox a veces tiene problemas de importación directa en ESM
+    const camoufoxModule = require('camoufox');
+    Camoufox = camoufoxModule.Camoufox;
+} catch (e) {
+    console.warn('[Browser] Camoufox no pudo cargarse, se usará Playwright Firefox estándar como respaldo:', e.message);
+}
+
+// Registrar el plugin de stealth globalmente para Puppeteer
+puppeteerExtra.use(StealthPlugin());
 
 /**
  * Lanza una instancia de navegador Puppeteer configurada según el entorno.
- * En producción (Vercel/Lambda) utiliza @sparticuz/chromium.
- * En desarrollo utiliza el puppeteer estándar.
- * @param {Object} options - Opciones adicionales para el lanzamiento (ej: { headless: false })
  */
 export async function launchBrowser(options = {}) {
-    // 1. Prioridad: Browserless.io (si está configurado en .env)
     const browserlessEndpoint = process.env.BROWSERLESS_WS_ENDPOINT;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
 
@@ -23,18 +36,14 @@ export async function launchBrowser(options = {}) {
             });
         } catch (error) {
             console.error('[Browser] Error al conectar con Browserless.io:', error.message);
-            // Si falla, continuamos con los otros métodos
         }
     }
 
-    // 2. Detección de entorno de producción (Vercel, AWS Lambda, o variable de entorno)
     const isProduction = 
         process.env.NODE_ENV === 'production' || 
         process.env.VERCEL === '1' || 
         process.env.AWS_EXECUTION_ENV ||
         process.env.LAMBDA_TASK_ROOT;
-
-    console.log(`[Browser] Iniciando navegador en modo: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
 
     if (isProduction) {
         try {
@@ -51,20 +60,42 @@ export async function launchBrowser(options = {}) {
         }
     }
 
-    // 3. Configuración para desarrollo local
-    return await puppeteer.launch({
+    console.log(`[Browser] Iniciando Puppeteer con Stealth...`);
+    return await puppeteerExtra.launch({
         headless: "new",
         args: [
             "--no-sandbox", 
             "--disable-setuid-sandbox", 
             "--disable-dev-shm-usage",
-            "--disable-blink-features=AutomationControlled",
-            "--window-size=1920,1080"
+            "--disable-blink-features=AutomationControlled"
         ],
-        defaultViewport: {
-            width: 1920,
-            height: 1080
-        },
+        defaultViewport: { width: 1920, height: 1080 },
+        ...options
+    });
+}
+
+/**
+ * Lanza una instancia de Camoufox o Playwright Firefox (mismo API)
+ */
+export async function launchCamoufox(options = {}) {
+    const isHeadless = options.headless !== undefined ? options.headless : true;
+
+    if (Camoufox) {
+        console.log(`[Browser] Iniciando Camoufox (Playwright Stealth)...`);
+        try {
+            return await Camoufox({
+                headless: isHeadless,
+                ...options
+            });
+        } catch (error) {
+            console.error('[Browser] Error al lanzar Camoufox, intentando Playwright Firefox:', error.message);
+        }
+    }
+
+    // Respaldo a Playwright Firefox estándar (mismo API que Camoufox)
+    console.log(`[Browser] Iniciando Playwright Firefox...`);
+    return await playwright.firefox.launch({
+        headless: isHeadless,
         ...options
     });
 }

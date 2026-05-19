@@ -11,7 +11,7 @@ function normalizarEstadoHaceb(estado) {
     return "Enviado";
   }
   if (e.includes("destino") || e.includes("entregado")) {
-    return "Recibido";
+    return "Entregado";
   }
   // "va en camino", etc.
   return "En camino";
@@ -21,7 +21,7 @@ export async function consultarGuiaHaceb(guia) {
   let browser = null;
 
   try {
-    browser = await launchBrowser({ headless: false });
+    browser = await launchBrowser();
     const page = await browser.newPage();
 
     // Configurar User Agent para parecer un navegador real
@@ -38,12 +38,10 @@ export async function consultarGuiaHaceb(guia) {
     // Esperar que el formulario esté disponible
     await page.waitForSelector(".widget-box__input", { timeout: 15000 });
 
-    // Escribir el número de cédula
+    // Escribir el número de cédula/guía
     await page.type(".widget-box__input", guia, { delay: 50 });
 
-    // Preparar captura de la nueva ventana ANTES de hacer click
-    // En Puppeteer, 'page.waitForEvent' no existe (es de Playwright).
-    // Usamos el evento 'targetcreated' del browser para capturar la nueva pestaña.
+    // Preparar captura de la nueva ventana ( DispatchTrack suele abrir una nueva pestaña)
     const popupPromise = new Promise((resolve) =>
       browser.once("targetcreated", async (target) => {
         const newPage = await target.page();
@@ -56,7 +54,7 @@ export async function consultarGuiaHaceb(guia) {
     const newPage = await popupPromise;
 
     if (!newPage) {
-      console.warn(`[Haceb] No se abrió nueva ventana para cédula ${guia}`);
+      console.warn(`[Haceb] No se abrió nueva ventana para guía ${guia}`);
       return null;
     }
 
@@ -65,6 +63,8 @@ export async function consultarGuiaHaceb(guia) {
     // Esperar que la nueva página cargue el timeline
     await newPage.waitForSelector(".widget-result__tracking", {
       timeout: 30000,
+    }).catch(() => {
+        console.warn("[Haceb] Timeout esperando .widget-result__tracking");
     });
 
     // Extraer datos del timeline
@@ -83,8 +83,6 @@ export async function consultarGuiaHaceb(guia) {
 
         let fecha = "";
         if (dateEl) {
-          // El contenido es "29/04/2026<br>11:57", textContent lo une sin separador
-          // Usamos innerHTML y split por <br>
           const raw = dateEl.innerHTML;
           const parts = raw.split(/<br\s*\/?>/i);
           const date = parts[0]?.trim() || "";
@@ -113,14 +111,14 @@ export async function consultarGuiaHaceb(guia) {
         fechaActualizacion: lastCompleted.fecha,
         fechaEnvio: firstItem.fecha,
         fechaEntrega:
-          estadoNormalizado === "Recibido" ? lastCompleted.fecha : null,
+          estadoNormalizado === "Entregado" ? lastCompleted.fecha : null,
       };
     }
 
-    console.warn(`[Haceb] Timeline vacío para cédula ${guia}`);
+    console.warn(`[Haceb] Timeline vacío para guía ${guia}`);
     return null;
   } catch (error) {
-    console.error(`[Haceb] Error consultando cédula ${guia}:`, error.message);
+    console.error(`[Haceb] Error consultando guía ${guia}:`, error.message);
     return null;
   } finally {
     if (browser) {

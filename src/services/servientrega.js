@@ -4,7 +4,7 @@ import { SERVIENTREGA_API_URL, MOCK_USER_ID, MOCK_COUNTRY_ID, LANGUAGE } from '.
 function normalizarEstadoServientrega(estado) {
     const e = estado.toLowerCase();
     if (e.includes('en proceso') || e.includes('recolectado')) return 'Enviado';
-    if (e.includes('entregado')) return 'Recibido';
+    if (e.includes('entregado')) return 'Entregado';
     return 'En camino';
 }
 

@@ -6,7 +6,7 @@ function normalizarEstadoRapidoOchoa(estado) {
 
   if (e === "GUIA ELABORADA") return "Enviado";
   if (e === "ENTREGADA" || e.includes("FACTURAR") || e.includes("FACTURADA"))
-    return "Recibido";
+    return "Entregado";
 
   return "En camino";
 }
@@ -94,7 +94,7 @@ export async function consultarGuiaRapidoOchoa(guia) {
         fechaActualizacion: trackingData.fecha,
         fechaEnvio: null,
         fechaEntrega:
-          estadoNormalizado === "Recibido" ? trackingData.fecha : null,
+          estadoNormalizado === "Entregado" ? trackingData.fecha : null,
       };
     } else {
       console.warn(`[RapidoOchoa] No tracking details found for guide ${guia}`);
